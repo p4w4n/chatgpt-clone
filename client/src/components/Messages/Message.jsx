@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import copy from 'copy-to-clipboard';
 import SubRow from './Content/SubRow';
@@ -31,7 +31,7 @@ export default function Message({
   siblingCount,
   setSiblingIdx
 }) {
-  const { text, searchResult, isCreatedByUser, error, submitting, unfinished, cancelled } = message;
+  const { text, searchResult, isCreatedByUser, error, submitting, unfinished } = message;
   const isSubmitting = useRecoilValue(store.isSubmitting);
   const setLatestMessage = useSetRecoilState(store.latestMessage);
   const [abortScroll, setAbort] = useState(false);
@@ -41,7 +41,9 @@ export default function Message({
   const { ask, regenerate } = useMessageHandler();
   const { switchToConversation } = store.useConversation();
   const blinker = submitting && isSubmitting;
-  const getConversationQuery = useGetConversationByIdQuery(message.conversationId, { enabled: false });
+  const getConversationQuery = useGetConversationByIdQuery(message.conversationId, {
+    enabled: false
+  });
 
   // debugging
   // useEffect(() => {
@@ -61,7 +63,7 @@ export default function Message({
     }
   }, [last, message]);
 
-  const enterEdit = cancel => setCurrentEditId(cancel ? -1 : message.messageId);
+  const enterEdit = (cancel) => setCurrentEditId(cancel ? -1 : message.messageId);
 
   const handleWheel = () => {
     if (blinker) {
@@ -71,9 +73,10 @@ export default function Message({
     }
   };
 
-  const getError = text => {
+  const getError = (text) => {
+    const errorMessage = text.length > 512 ? text.slice(0, 512) + '...' : text;
     const match = text.match(/\{[^{}]*\}/);
-    var json = match ? match[0] : ''
+    var json = match ? match[0] : '';
     if (isJson(json)) {
       json = JSON.parse(json);
       if (json.code === 'invalid_api_key') {
@@ -81,10 +84,10 @@ export default function Message({
       } else if (json.type === 'insufficient_quota') {
         return "We're sorry, but the default API key has reached its limit. To continue using this service, please set up your own API key. You can do this by clicking on the model logo in the top-left corner of the textbox.";
       } else {
-        return `Oops! Something went wrong. Please try again in a few moments. Here's the specific error message we encountered: ${text}`;
+        return `Oops! Something went wrong. Please try again in a few moments. Here's the specific error message we encountered: ${errorMessage}`;
       }
     } else {
-      return `Oops! Something went wrong. Please try again in a few moments. Here's the specific error message we encountered: ${text}`;
+      return `Oops! Something went wrong. Please try again in a few moments. Here's the specific error message we encountered: ${errorMessage}`;
     }
   };
 
@@ -124,7 +127,7 @@ export default function Message({
     if (!isSubmitting && !message?.isCreatedByUser) regenerate(message);
   };
 
-  const copyToClipboard = setIsCopied => {
+  const copyToClipboard = (setIsCopied) => {
     setIsCopied(true);
     copy(message?.text);
 
@@ -135,17 +138,14 @@ export default function Message({
 
   const clickSearchResult = async () => {
     if (!searchResult) return;
-    getConversationQuery.refetch(message.conversationId).then(response => {
+    getConversationQuery.refetch(message.conversationId).then((response) => {
       switchToConversation(response.data);
     });
   };
 
   return (
     <>
-      <div
-        {...props}
-        onWheel={handleWheel}
-      >
+      <div {...props} onWheel={handleWheel}>
         <div className="relative m-auto flex gap-4 p-4 text-base md:max-w-2xl md:gap-6 md:py-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
           <div className="relative flex h-[30px] w-[30px] flex-col items-end text-right text-xs md:text-sm">
             {typeof icon === 'string' && icon.match(/[^\\x00-\\x7F]+/) ? (
@@ -197,10 +197,7 @@ export default function Message({
                     >
                       Save & Submit
                     </button>
-                    <button
-                      className="btn btn-neutral relative"
-                      onClick={() => enterEdit(true)}
-                    >
+                    <button className="btn btn-neutral relative" onClick={() => enterEdit(true)}>
                       Cancel
                     </button>
                   </div>
